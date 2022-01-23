@@ -40,7 +40,9 @@ topartists <- get_my_top_artists_or_tracks(type = 'artists',
                              limit = 20) %>% 
                              filter(followers.total > 10000)
 top10artists <- topartists[1:10, ]              
-top20artists11_20 <- topartists[11:20, ]  
+top20artists11_20 <- topartists[11:20, ] 
+top20artists11_20 <- top20artists11_20 %>% 
+   drop_na(name)
 ```
 
 ```{r}
@@ -58,7 +60,7 @@ toptracks <- get_my_top_artists_or_tracks(type = 'tracks',
 ```{r}
 #get song characteristics for ALL of your top 20 artists' songs in one data frame
 #had to split into several queries to avoid 429 error
-datalist = list()
+albumdatalist = list()
 
 for (artist in top10artists$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("album"))
@@ -69,7 +71,12 @@ for (artist in top20artists11_20$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("album"))
     datalist[[artist]] <- audiofeatures # add it to your list
 }
+albumallaudiofeatures  = do.call(rbind, albumdatalist)
+```
 
+
+```{r}
+singledatalist = list()
 for (artist in top10artists$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("single"))
     datalist[[artist]] <- audiofeatures # add it to your list
@@ -80,6 +87,12 @@ for (artist in top20artists11_20$name) {
     datalist[[artist]] <- audiofeatures # add it to your list
 }
 
+singleallaudiofeatures  = do.call(rbind, singledatalist)
+```
+
+
+```{r}
+featdatalist = list()
 for (artist in top10artists$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("appears_on"))
     datalist[[artist]] <- audiofeatures # add it to your list
@@ -92,7 +105,7 @@ for (artist in top20artists11_20$name) {
 
 
 
-allaudiofeatures  = do.call(rbind, datalist)
+featallaudiofeatures  = do.call(rbind, featlist)
 ```
 
 ```{r}
