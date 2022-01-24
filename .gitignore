@@ -27,3 +27,6 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 .DS_Store
+desik_essentials_audio_features.csv
+desik_essentials_audio_features.xlsx
+~$desik_essientials_audio_features.xlsx

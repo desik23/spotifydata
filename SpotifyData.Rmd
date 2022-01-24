@@ -52,39 +52,66 @@ toptracks <- get_my_top_artists_or_tracks(type = 'tracks',
                              limit = 50) %>% 
     mutate(
         artist.name = map_chr(artists, function(x) x$name[1])
-        ) %>% 
-    select(name, artist.name, album.name)
+        )
+```
+
+
+```{r}
+#top 50 songs audio features 
+top50tracksaudiofeatures <- get_track_audio_features(toptracks$id)
+```
+
+```{r}
+#get user playlist audio features data
+#username from spotify
+playlist_username <- '125517323'
+#user playlist uri from share link option
+playlist_uris <- c('3PL4rwNKt4wsGTUgmzUhLB')
+playlist_audio_features <- get_playlist_audio_features(playlist_username, playlist_uris)
+playlist_audio_features_clean <- playlist_audio_features %>%
+                    janitor::clean_names()
+```
+
+
+```{r}
+#clean data frame with song characteristics for top 50 tracks
+top50tracksaudiofeatures_clean <- top50tracksaudiofeatures %>%
+                    janitor::clean_names()
 ```
 
 
 ```{r}
 #get song characteristics for ALL of your top 20 artists' songs in one data frame
 #had to split into several queries to avoid 429 error
+#tracks on albums
 albumdatalist = list()
 
 for (artist in top10artists$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("album"))
-    datalist[[artist]] <- audiofeatures # add it to your list
+    albumdatalist[[artist]] <- audiofeatures # add it to your list
 }
 
 for (artist in top20artists11_20$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("album"))
-    datalist[[artist]] <- audiofeatures # add it to your list
+    albumdatalist[[artist]] <- audiofeatures # add it to your list
 }
 albumallaudiofeatures  = do.call(rbind, albumdatalist)
 ```
 
 
 ```{r}
+#get song characteristics for ALL of your top 20 artists' songs in one data frame
+#had to split into several queries to avoid 429 error
+#tracks that are singles
 singledatalist = list()
 for (artist in top10artists$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("single"))
-    datalist[[artist]] <- audiofeatures # add it to your list
+    singledatalist[[artist]] <- audiofeatures # add it to your list
 }
 
 for (artist in top20artists11_20$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("single"))
-    datalist[[artist]] <- audiofeatures # add it to your list
+    singledatalist[[artist]] <- audiofeatures # add it to your list
 }
 
 singleallaudiofeatures  = do.call(rbind, singledatalist)
@@ -92,27 +119,44 @@ singleallaudiofeatures  = do.call(rbind, singledatalist)
 
 
 ```{r}
+#get song characteristics for ALL of your top 20 artists' songs in one data frame
+#had to split into several queries to avoid 429 error
+#tracks that are features
+
 featdatalist = list()
 for (artist in top10artists$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("appears_on"))
-    datalist[[artist]] <- audiofeatures # add it to your list
+    featdatalist[[artist]] <- audiofeatures # add it to your list
 }
 
 for (artist in top20artists11_20$name) {
     audiofeatures <- get_artist_audio_features(artist, include_groups = c("appears_on"))
-    datalist[[artist]] <- audiofeatures # add it to your list
+    featdatalist[[artist]] <- audiofeatures # add it to your list
 }
 
 
 
-featallaudiofeatures  = do.call(rbind, featlist)
+featallaudiofeatures  = do.call(rbind, featdatalist)
 ```
 
 ```{r}
 #clean data frame with song characteristics for top 20 artists to get rid of duplicates and BGM
-allaudiofeatures_clean <- allaudiofeatures %>% 
+allaudiofeatures_clean <- albumallaudiofeatures %>% 
+                    rbind(singleallaudiofeatures) %>% 
+                    rbind(featallaudiofeatures) %>% 
                     janitor::clean_names() %>% 
                     filter(!grepl('Background Score|Dialogues', album_name)) %>% 
-                    distinct("track_name")
+                    filter(!grepl('Album Version|Edited|Instrumental', track_name)) %>% 
+                    filter(album_type != "compilation") %>% 
+                    distinct(track_name, .keep_all= TRUE)
+
+                    
+                  
+```
+
+```{r}
+#export playlist df
+playlist_audio_features_clean <- apply(playlist_audio_features_clean,2,as.character)
+write.csv(playlist_audio_features_clean, "desik_essentials_audio_features.csv") 
 ```
 
